@@ -36,7 +36,7 @@ app.post('/api/send-otp', async (req, res) => {
     );
 
     // ارسال پیامک از طریق IPPanel
-    const response = await axios.post('https://api.ip-panel.com/v1/sms/send/webservice/single', {
+    await axios.post('https://api.ip-panel.com/v1/sms/send/webservice/single', {
       sender: process.env.IPPANEL_SENDER,
       recipient: phone,
       message: `کد تایید اپلیکیشن پیدا: ${code}`
@@ -53,7 +53,28 @@ app.post('/api/send-otp', async (req, res) => {
   }
 });
 
+// روت بررسی و تایید کد OTP
+app.post('/api/verify-otp', async (req, res) => {
+  const { phone, code } = req.body;
+  if (!phone || !code) {
+    return res.status(400).json({ success: false, message: 'شماره موبایل و کد تایید الزامی هستند' });
+  }
+
+  try {
+    const user = await User.findOne({ phone });
+    if (!user || user.code !== code) {
+      return res.status(400).json({ success: false, message: 'کد تایید اشتباه است یا منقضی شده' });
+    }
+
+    res.json({ success: true, token: "sample_token_peyda_123", message: 'ورود موفقیت‌آمیز بود' });
+  } catch (error) {
+    console.error('Error verifying code:', error.message);
+    res.status(500).json({ success: false, message: 'خطا در سرور' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+    
